@@ -3,7 +3,7 @@ import fs from "fs/promises"
 import path from 'path'
 
 const getDir = dirStr => path.join(__dirname, dirStr)
-const isDir = path => new Promise(res => {
+const isDirectory = path => new Promise(res => {
 	fs.stat(path)
 		.then(stat => res(stat.isDirectory()))
 		.catch(() => res(false))
@@ -14,11 +14,13 @@ const searchDir = async (dir, dirs, opts = {}, foundDirs = []) => {
 	const files = await fs.readdir(dir).catch((_) => { })
 	if (files) {
 		for (let file of files) {
-			if (!(await isDir(dir + file)) || excludes.includes(file)) continue
-			else if (dirs.includes(file)) {
+			let isDir = await isDirectory(dir + file)
+			if (!isDir || excludes.includes(file)) continue
+			opts.onEachDir && opts.onEachDir(dir + file)
+			if (dirs.includes(file)) {
 				foundDirs.unshift(
-					opts.select
-						? opts.select(dir, file)
+					opts.onFormat
+						? opts.onFormat(dir, file)
 						: dir + file
 				)
 				opts.onFound && opts.onFound(foundDirs)

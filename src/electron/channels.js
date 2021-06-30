@@ -6,7 +6,8 @@ const {
 	FIND_NODE_MODULES,
 	PROGRESS_NODE_MODULES,
 	OPEN_IN_EXPLORER,
-	OPEN_WITH_VS_CODE
+	OPEN_WITH_VS_CODE,
+	EACH_DIR
 } = require('../consts')._COMMANDS
 
 export const registerChannels = win => {
@@ -23,14 +24,15 @@ export const registerChannels = win => {
 				'_Encoder', 'node-cleaner', 'golang'
 			],
 			onFound(files) { send(PROGRESS_NODE_MODULES, files); },
-			select(dir, file) {
+			onFormat(dir, file) {
 				const location = dir.split('\\')
 				return {
 					appName: [...location][location.length - 2],
 					appPath: dir.substr(0, dir.length - 1),
 					nodeModulesPath: dir + file
 				}
-			}
+			},
+			onEachDir(dir) { send(EACH_DIR, dir) }
 		})
 		send(FIND_NODE_MODULES, nodeModules);
 	})
@@ -38,7 +40,7 @@ export const registerChannels = win => {
 	ipcMain.on(OPEN_IN_EXPLORER, (_, dir) => {
 		shell.showItemInFolder(dir)
 	})
-	
+
 	ipcMain.on(OPEN_WITH_VS_CODE, (_, dir) => {
 		exec(`code ${dir}`)
 	})

@@ -1,38 +1,37 @@
 <template>
 	<v-app>
-		<v-app-bar app color="primary" dark>
-			<div class="d-flex align-center">
-				<v-img
-					alt="Vuetify Logo"
-					class="shrink mr-2"
-					contain
-					src="https://cdn.vuetifyjs.com/images/logos/vuetify-logo-dark.png"
-					transition="scale-transition"
-					width="40"
-				/>
+		<v-app-bar app flat dense color="primary" dark></v-app-bar>
 
-				<v-img
-					alt="Vuetify Name"
-					class="shrink mt-1 hidden-sm-and-down"
-					contain
-					min-width="100"
-					src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
-					width="100"
-				/>
-			</div>
+		<!-- NAVIGATION DRAWER -->
+		<v-navigation-drawer app permanent>
+			<v-list-item>
+				<v-list-item-content>
+					<v-list-item-title class="text-h6">NodeJS Cleaner</v-list-item-title>
+					<v-list-item-subtitle>Utilities and Cleaner</v-list-item-subtitle>
+				</v-list-item-content>
+			</v-list-item>
+			<v-divider></v-divider>
+			<v-list dense nav>
+				<v-list-item link to="/">
+					<v-list-item-icon class="mr-4">
+						<v-icon>mdi-view-dashboard</v-icon>
+					</v-list-item-icon>
+					<v-list-item-content>
+						<v-list-item-title>Dashboard</v-list-item-title>
+					</v-list-item-content>
+				</v-list-item>
+				<v-list-item link to="/node-modules">
+					<v-list-item-icon class="mr-4">
+						<v-icon>mdi-nodejs</v-icon>
+					</v-list-item-icon>
+					<v-list-item-content>
+						<v-list-item-title>Node Modules</v-list-item-title>
+					</v-list-item-content>
+				</v-list-item>
+			</v-list>
+		</v-navigation-drawer>
 
-			<v-spacer></v-spacer>
-
-			<v-btn to="/">Home</v-btn>
-			<v-btn to="/about" class="ml-3">About</v-btn>
-
-			<v-btn href="https://github.com/vuetifyjs/vuetify/releases/latest" target="_blank" text>
-				<span class="mr-2">Latest Release</span>
-				<v-icon>mdi-open-in-new</v-icon>
-			</v-btn>
-		</v-app-bar>
-
-		<v-main>
+		<v-main class="grey lighten-2">
 			<router-view />
 		</v-main>
 	</v-app>
@@ -42,9 +41,5 @@
 
 export default {
 	name: 'App',
-
-	data: () => ({
-		//
-	}),
 };
 </script>

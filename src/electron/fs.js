@@ -10,24 +10,34 @@ const isDirectory = path => new Promise(res => {
 })
 
 const searchDir = async (dir, dirs, opts = {}, foundDirs = []) => {
+
+	let tm, isCancelled = false
 	const excludes = opts.excludes || []
 	const files = await fs.readdir(dir).catch((_) => { })
+
 	if (files) {
 		for (let file of files) {
 			let isDir = await isDirectory(dir + file)
 			if (!isDir || excludes.includes(file)) continue
-			opts.onEachDir && opts.onEachDir(dir + file)
+
+			if (!tm) tm = setTimeout(() => {
+				if (opts.onEachDir) {
+					isCancelled = opts.onEachDir(dir + file)
+					clearTimeout(tm), tm = undefined
+				}
+			}, 1000);
+			if (isCancelled) break
+
+
 			if (dirs.includes(file)) {
-				foundDirs.unshift(
-					opts.onFormat
-						? opts.onFormat(dir, file)
-						: dir + file
-				)
-				opts.onFound && opts.onFound(foundDirs)
+				let foundDir = opts.onFormat ? opts.onFormat(dir, file) : dir + file
+				foundDirs.unshift(foundDir)
+				opts.onFound && opts.onFound(foundDir, foundDirs)
 			}
 			else await searchDir(`${dir + file}\\`, dirs, opts, foundDirs)
 		}
 	}
+	if (tm) clearTimeout(tm)
 	return foundDirs
 }
 

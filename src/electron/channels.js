@@ -1,17 +1,21 @@
 import { shell, ipcMain } from 'electron'
 import { exec } from 'child_process'
 import { searchDir } from './fs'
+import fs from 'fs/promises'
+import path from 'path'
 // import rimraf from/
 
 const {
-	FIND_NODE_MODULES,
-	PROGRESS_NODE_MODULES,
-	OPEN_IN_EXPLORER,
-	OPEN_WITH_VS_CODE,
+	TEST,
 	EACH_DIR,
+	OPEN_IN_EXPLORER,
+	FIND_NODE_MODULES,
+	OPEN_WITH_VS_CODE,
 	DELETE_NODE_MODULES,
+	PROGRESS_NODE_MODULES,
 	CANCELLED_SEARCHING_NODE_MODULES,
-	PROGRESS_DELETE_NODE_MODULES
+	PROGRESS_DELETE_NODE_MODULES,
+	GET_SUB_DIRS
 } = require('../consts')._COMMANDS
 
 const isCancelled = {
@@ -24,8 +28,47 @@ export const registerChannels = win => {
 		win.webContents.send(event, data);
 	}
 
-	ipcMain.on(FIND_NODE_MODULES, async () => {
-		const nodeModules = await searchDir("W:\\", ['node_modules'], {
+	ipcMain.on(TEST, async (_, payload) => {
+		console.log(TEST, payload)
+
+		const folder = 'C:'
+
+		const readdirRes = await fs
+			.readdir(folder, { withFileTypes: true })
+			.catch((err) => console.log('ERROR::', err.message))
+
+		const files = readdirRes
+			.filter(dirent => dirent.isDirectory())
+			.map(dirent => {
+				return {
+					name: dirent.name,
+					path: path.resolve(folder, dirent.name)
+				}
+			})
+
+		send(TEST, files);
+	})
+
+	ipcMain.on(GET_SUB_DIRS, async (_, payload) => {
+
+		const readdirRes = await fs
+			.readdir(payload.path, { withFileTypes: true })
+			.catch((err) => console.log('ERROR::', err.message))
+
+		const files = readdirRes
+			.filter(dirent => dirent.isDirectory())
+			.map(dirent => {
+				return {
+					name: dirent.name,
+					path: path.resolve(payload.path, dirent.name)
+				}
+			})
+
+		send(GET_SUB_DIRS, files);
+	})
+
+	ipcMain.on(FIND_NODE_MODULES, async (_, dir) => {
+		const nodeModules = await searchDir(dir.path, ['node_modules'], {
 			excludes: [
 				'.git', 'protanopia', 'Android Studio', 'vendor',
 				'allinone-dark', 'utilty.helpers', 'rkenger', 'rkanik-me',

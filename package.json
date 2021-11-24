@@ -15,9 +15,11 @@
   "dependencies": {
     "child_process": "^1.0.2",
     "core-js": "^3.6.5",
+    "lodash": "^4.17.21",
     "rimraf": "^3.0.2",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",
+    "vuelpers": "^1.0.6",
     "vuetify": "^2.4.0",
     "vuex": "^3.4.0"
   },

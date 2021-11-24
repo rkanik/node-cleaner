@@ -15,7 +15,8 @@ new Vue({
   store,
   vuetify,
   created() {
-    this.$router.push('/')
+    if (this.$route.path !== '/')
+      this.$router.push('/')
   },
   render: h => h(App)
 }).$mount('#app')

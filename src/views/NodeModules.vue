@@ -10,6 +10,13 @@
 				small
 				depressed
 				class="mr-3"
+				color="success"
+				@click="sendTest"
+			>TEST</v-btn>
+			<v-btn
+				small
+				depressed
+				class="mr-3"
 				color="error"
 				v-if="loading"
 				@click="handleCancelSearchNodeModules"
@@ -22,9 +29,43 @@
 				@click="handleSearchNodeModules"
 			>Search Node Modules</v-btn>
 		</v-toolbar>
+
+		<v-combobox
+			v-model="currentDirModel"
+			item-text="path"
+			item-value="path"
+			:items="currentDirSubDirs"
+			placeholder="C:"
+			class="mx-4"
+			dense
+		>
+
+			<template #item="{item, on, attrs}">
+				<v-list-item
+					v-on="on"
+					v-bind="attrs"
+					two-line
+					dense
+				>
+					<v-list-item-avatar>
+						<v-icon
+							dark
+							class="grey lighten-1"
+						>
+							mdi-folder
+						</v-icon>
+					</v-list-item-avatar>
+					<v-list-item-content>
+						<v-list-item-title>{{item.name}}</v-list-item-title>
+						<v-list-item-subtitle>{{item.path}}</v-list-item-subtitle>
+					</v-list-item-content>
+				</v-list-item>
+			</template>
+		</v-combobox>
+
 		<div
 			class="px-4 caption truncate"
-			v-if="currentDir"
+			v-if="currentSearchDir"
 		>
 			<v-progress-circular
 				indeterminate
@@ -32,7 +73,7 @@
 				size="12"
 				width="1"
 			/>
-			{{ currentDir }}
+			{{ currentSearchDir }}
 		</div>
 		<v-toolbar
 			flat
@@ -169,16 +210,19 @@
 </template>
 
 <script>
+import _ from 'lodash'
 
 const {
-	FIND_NODE_MODULES,
-	PROGRESS_NODE_MODULES,
-	OPEN_IN_EXPLORER,
-	OPEN_WITH_VS_CODE,
+	TEST,
 	EACH_DIR,
+	OPEN_IN_EXPLORER,
+	FIND_NODE_MODULES,
+	OPEN_WITH_VS_CODE,
 	DELETE_NODE_MODULES,
+	PROGRESS_NODE_MODULES,
 	CANCELLED_SEARCHING_NODE_MODULES,
-	PROGRESS_DELETE_NODE_MODULES
+	PROGRESS_DELETE_NODE_MODULES,
+	GET_SUB_DIRS
 } = require('../consts')._COMMANDS
 
 export default {
@@ -186,10 +230,29 @@ export default {
 	data: () => ({
 		loading: false,
 		checkboxIsChecked: true,
-		currentDir: null,
-		nodeModules: []
+		currentSearchDir: null,
+		nodeModules: [],
+		currentDir: { path: 'W:\\' },
+		currentDirSubDirs: []
 	}),
 	computed: {
+		currentDirModel: {
+			get() {
+				return this.currentDir
+			},
+			set(v) {
+				if (!v) return (this.currentDir = null)
+
+				if (!_.isString(v)) this.currentDir = v
+				else this.currentDir = { path: v }
+
+				if (!this.currentDir.path.endsWith('\\')) {
+					this.currentDir.path += '\\'
+				}
+
+				this.onGetSubDirs(this.currentDir)
+			}
+		},
 		selectedNodeModules() {
 			return this.nodeModules.filter(nm => {
 				return nm.isSelected
@@ -200,19 +263,21 @@ export default {
 		let local = localStorage.getItem('___aaa-bbb-aaa___')
 		if (local) this.nodeModules = JSON.parse(local)
 
+		this.onGetSubDirs(this.currentDir)
+
 		this.$ipc.on(PROGRESS_NODE_MODULES, dir => {
-			let exist = this.nodeModules.some(
-				nm => nm.nodeModulesPath === dir.nodeModulesPath
+			// let exist = this.nodeModules.some(
+			// 	nm => nm.nodeModulesPath === dir.nodeModulesPath
+			// )
+			// if (!exist) {
+			this.nodeModules.unshift(dir)
+			localStorage.setItem(
+				'___aaa-bbb-aaa___',
+				JSON.stringify(this.nodeModules)
 			)
-			if (!exist) {
-				this.nodeModules.unshift(dir)
-				localStorage.setItem(
-					'___aaa-bbb-aaa___',
-					JSON.stringify(this.nodeModules)
-				)
-			}
+			// }
 		});
-		this.$ipc.on(EACH_DIR, dir => { this.currentDir = dir });
+		this.$ipc.on(EACH_DIR, dir => { this.currentSearchDir = dir });
 		this.$ipc.on(PROGRESS_DELETE_NODE_MODULES, dir => {
 			this.nodeModules = this.nodeModules.filter(nmDir => {
 				return nmDir.nodeModulesPath !== dir
@@ -220,6 +285,16 @@ export default {
 		});
 	},
 	methods: {
+		onGetSubDirs(dir) {
+			this.$ipc.emit(GET_SUB_DIRS, dir, subDirs => {
+				this.currentDirSubDirs = subDirs
+			})
+		},
+		sendTest() {
+			this.$ipc.emit(TEST, { message: 'Hello' }, res => {
+				console.log(res, JSON.stringify(res))
+			})
+		},
 		toggleSelectNodeModule(index) {
 			if (this.selectedNodeModulesIndexes.includes(index))
 				this.selectedNodeModulesIndexes =
@@ -228,22 +303,23 @@ export default {
 		},
 		handleSearchNodeModules() {
 			this.loading = true
-			this.$ipc.emit(FIND_NODE_MODULES, () => {
+			this.nodeModules = []
+			this.$ipc.emit(FIND_NODE_MODULES, this.currentDir, () => {
 				this.loading = false
-				this.currentDir = null
+				this.currentSearchDir = null
 			});
 		},
 		handleCancelSearchNodeModules() {
 			this.$ipc.emit(CANCELLED_SEARCHING_NODE_MODULES, () => {
 				this.loading = false
-				this.currentDir = null
+				this.currentSearchDir = null
 			});
 		},
 		handleOpenInExplorer(dir) {
-			this.$ipc.emit(OPEN_IN_EXPLORER, dir, () => { })
+			this.$ipc.emit(OPEN_IN_EXPLORER, dir)
 		},
 		handleOpenInVSCode(dir) {
-			this.$ipc.emit(OPEN_WITH_VS_CODE, dir, () => { })
+			this.$ipc.emit(OPEN_WITH_VS_CODE, dir)
 		},
 		handleBulkDeleteNodeModules() {
 			this.handleDeleteNodeModules(
@@ -253,7 +329,7 @@ export default {
 			)
 		},
 		handleDeleteNodeModules(dirs) {
-			this.$ipc.emit(DELETE_NODE_MODULES, dirs, () => {})
+			this.$ipc.emit(DELETE_NODE_MODULES, dirs)
 		},
 	}
 }

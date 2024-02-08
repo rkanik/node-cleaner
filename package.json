@@ -70,5 +70,9 @@
       "vue-cli-service lint",
       "git add"
     ]
+  },
+  "volta": {
+    "node": "14.21.3",
+    "yarn": "1.22.21"
   }
 }
